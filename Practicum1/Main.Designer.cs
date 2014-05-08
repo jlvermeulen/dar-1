@@ -1,6 +1,6 @@
 ﻿namespace Practicum1
 {
-    partial class Form1
+    partial class Main
     {
         /// <summary>
         /// Required designer variable.
@@ -40,18 +40,16 @@
             this.label1.Size = new System.Drawing.Size(100, 100);
             this.label1.TabIndex = 0;
             this.label1.Tag = "test";
-            this.label1.Click += new System.EventHandler(this.label1_Click);
             // 
-            // Form1
+            // Main
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(276, 222);
             this.Controls.Add(this.label1);
             this.MinimumSize = new System.Drawing.Size(100, 100);
-            this.Name = "Form1";
+            this.Name = "Main";
             this.Tag = "test";
-            this.Load += new System.EventHandler(this.Form1_Load);
             this.ResumeLayout(false);
             this.PerformLayout();
 
