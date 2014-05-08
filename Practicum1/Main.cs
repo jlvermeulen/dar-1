@@ -3,9 +3,9 @@ using System.Data.SQLite;
 
 namespace Practicum1
 {
-    public partial class Form1 : Form
+    public partial class Main : Form
     {
-        public Form1()
+        public Main()
         {
             InitializeComponent();
             SQLiteConnection.CreateFile("MyDatabase.sqlite");
@@ -31,17 +31,6 @@ namespace Practicum1
             SQLiteDataReader reader = command.ExecuteReader();
             while (reader.Read())
                 label1.Text += "Name: " + reader["name"] + "\tScore: " + reader["score"] + '\n';
-
-        }
-
-
-        private void Form1_Load(object sender, System.EventArgs e)
-        {
-
-        }
-
-        private void label1_Click(object sender, System.EventArgs e)
-        {
 
         }
     }
