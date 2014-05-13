@@ -13,9 +13,11 @@ namespace Practicum1
             SQLiteConnection metaDatabaseConnection = CreateMetaDatabase();
             
             // make connection to the autompg database
+            SQLiteConnection.CreateFile("autompg.sqlite");
             SQLiteConnection databaseConnection;
-            databaseConnection = new SQLiteConnection("Data Source=autompg.sql;Version=3;");
+            databaseConnection = new SQLiteConnection("Data Source=autompg.sqlite;Version=3;");
             databaseConnection.Open();
+            ParseTable(databaseConnection);
 
             // fill the meta database using the 2 databases and the workload file
             FillMetaDatabase(metaDatabaseConnection, databaseConnection);
@@ -81,6 +83,12 @@ namespace Practicum1
 
 
             // Jaccard
+        }
+
+        public void ParseTable(SQLiteConnection databaseConnection)
+        {
+            // read and parse autompg
+
         }
     }
 }
