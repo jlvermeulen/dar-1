@@ -10,10 +10,14 @@ namespace Practicum1
 {
     public partial class Main : Form
     {
+        Dictionary<Tuple<string, string>, int> workloadCounts;
+        Dictionary<Tuple<string, string, string>, int> workloadInCounts;
+
         public Main()
         {
             InitializeComponent();
-            
+            workloadCounts = new Dictionary<Tuple<string, string>, int>();
+            workloadInCounts = new Dictionary<Tuple<string, string, string>, int>();
             // create the MetaDatabase
             SQLiteConnection metaDatabaseConnection = CreateMetaDatabase();
             
@@ -25,7 +29,9 @@ namespace Practicum1
             ParseTable(databaseConnection);
 
             // fill the meta database using the 2 databases and the workload file
-            FillMetaDatabase(metaDatabaseConnection, databaseConnection);          
+            FillMetaDatabase(metaDatabaseConnection, databaseConnection);  
+        
+
            
            // string sql = "create table highscores (name varchar(20), score int)";
            // SQLiteCommand command = new SQLiteCommand(sql, databaseConnection);
@@ -103,6 +109,7 @@ namespace Practicum1
             // calculation and insertion of IDF values
             // mpg
             int n = database.Count;
+
             for (int t = 5; t < 50; t++)
             {
                 decimal idf = CalculateIDFNumeric(database, "mpg", n, t);
@@ -166,7 +173,7 @@ namespace Practicum1
             CalculateIDFCategoric(database, "type", n, metaDatabaseConnection);
            
             // calculation and insertion of QF values
-
+            ParseWorkload();
 
 
 
@@ -186,13 +193,15 @@ namespace Practicum1
                     values[index] = value; // for calculation of h
                     index++;
                 }
+                //calculate std.dev.
                 double average = values.Average();
                 double sum = values.Sum(d => (d - average) * (d - average));
-                //Put it all together      
                 double stdDev = Math.Sqrt((sum) / (n - 1));
+                // calculate h
                 double h = 1.06 * stdDev * Math.Pow(n, -0.2);
-                double test1 = difference.Sum(d => Math.Pow(Math.E, (-0.5 * (d / h) * d / h)));
-                double test = Math.Log10(n / difference.Sum(d => Math.Pow(Math.E, (-0.5 * (d / h) * d / h))));
+                // calculate idf
+              //  double test1 = difference.Sum(d => Math.Pow(Math.E, (-0.5 * (d / h) * (d / h))));
+                double test = Math.Log10(n / difference.Sum(d => Math.Pow(Math.E, (-0.5 * (d / h) * (d / h)))));
                 return (decimal)test;
         }
         public void CalculateIDFCategoric(List<Dictionary<string, string>> database, string attribute, int n, SQLiteConnection metaDatabaseConnection)
@@ -200,15 +209,15 @@ namespace Practicum1
             Dictionary<string, int> counts = new Dictionary<string, int>();
             foreach (Dictionary<string, string> row in database)
             {
-                if (counts.ContainsKey(row["origin"]))
-                    counts[row["origin"]] += 1;
+                if (counts.ContainsKey(row[attribute]))
+                    counts[row[attribute]] += 1;
                 else
-                    counts.Add(row["origin"], 0);
+                    counts.Add(row[attribute], 1);
             }
             foreach (KeyValuePair<string, int> kvp in counts)
             {
-                decimal idf = (decimal)Math.Log10(n / kvp.Value);
-                string sql = "insert into IDF (attribute, value, IDF) values (\"" + attribute + "\", " + kvp.Key + ", " + idf.ToString(CultureInfo.InvariantCulture) + ")";
+                decimal idf = (decimal)Math.Log10((double)n / kvp.Value);
+                string sql = "insert into IDF (attribute, value, IDF) values (\"" + attribute + "\", \"" + kvp.Key + "\", " + idf.ToString(CultureInfo.InvariantCulture) + ")";
                 SQLiteCommand command = new SQLiteCommand(sql, metaDatabaseConnection);
                 command.ExecuteNonQuery();
             }
@@ -222,6 +231,64 @@ namespace Practicum1
             command.CommandText = strCommand;
             command.ExecuteNonQuery();
 
+        }
+
+        public void ParseWorkload()
+        {
+            int nQuerries, times;
+            StreamReader stream = new StreamReader("workload.txt");
+            string s = stream.ReadLine();
+            nQuerries = int.Parse(s.Split(' ')[0]);
+            s = stream.ReadLine();
+            while ((s = stream.ReadLine() )!= "")
+            {
+                times = int.Parse(s.Split(' ')[0]);
+                string where = s.Split(new string[] {"WHERE"}, StringSplitOptions.None)[1];
+                string[] statements = where.Split(new string[] {"AND"}, StringSplitOptions.None);
+                for (int i = 0; i < statements.Length; i++)
+                {
+                   
+                    if (!statements[i].Contains("IN"))
+                    {
+                         string[] ss = statements[i].Split('=');
+                        string attribute = ss[0].Trim();
+                        string value = ss[1].Trim();
+                        value = value.Substring(1, value.Length - 2);
+                        Tuple<string, string> t = new Tuple<string, string>(attribute, value);
+                        if (workloadCounts.ContainsKey(t))
+                            workloadCounts[t] += times;
+                        else
+                            workloadCounts[t] = times;
+                    }
+                    else
+                    {
+                        string[] ss = statements[i].Split(new string[]{"IN"}, StringSplitOptions.None);
+                        string attribute = ss[0].Trim();
+                        string value = ss[1].Trim();
+                        string[] values = value.Substring(1, value.Length - 2).Split(',');
+                        for (int x = 0; x < values.Length; x++)
+                            values[x] = values[x].Substring(1, values[x].Length - 2);
+
+                        for (int ii = 0; ii < values.Length; ii++)
+                            for (int j = ii; j < values.Length; j++)
+                            {
+                                Tuple<string,string,string> t1 = new Tuple<string,string,string>(attribute,values[ii], values[j]);
+                                Tuple<string,string,string> t2 = new Tuple<string,string,string>(attribute,values[j], values[ii]);
+                                if (workloadInCounts.ContainsKey(t1))
+                                {
+                                    workloadInCounts[t1] += times;
+                                    workloadInCounts[t2] += times;
+                                }
+                                else
+                                {
+                                    workloadInCounts[t1] = times;
+                                    workloadInCounts[t2] = times;
+                                }
+                            }
+                            
+                    }
+                }
+            }
         }
     }
 }
