@@ -12,7 +12,7 @@ namespace Practicum1
             HashSet<int> done = new HashSet<int>();
             decimal[] max = new decimal[values.Length];
             decimal thresh;
-
+            
             int pointer = 0;
             while (topK.Count < k && pointer < values[0].Count)
             {
