@@ -1,10 +1,10 @@
-﻿using System.Windows.Forms;
-using System.Data.SQLite;
-using System.IO;
+﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System;
+using System.Data.SQLite;
 using System.Globalization;
+using System.IO;
+using System.Linq;
+using System.Windows.Forms;
 
 namespace Practicum1
 {
@@ -28,8 +28,7 @@ namespace Practicum1
             
             // make connection to the autompg database
             SQLiteConnection.CreateFile("autompg.sqlite");
-            SQLiteConnection databaseConnection;
-            databaseConnection = new SQLiteConnection("Data Source=autompg.sqlite;Version=3;");
+            SQLiteConnection databaseConnection = new SQLiteConnection("Data Source=autompg.sqlite;Version=3;");
             databaseConnection.Open();
             ParseTable(databaseConnection);
 
@@ -246,6 +245,7 @@ namespace Practicum1
             double test = difference.Sum(d => Math.Pow(Math.E, (-0.5 * (d / h) * (d / h))));
             return (decimal)test;
         }
+
         public void CalculateIDFCategoric(List<Dictionary<string, string>> database, string attribute, int n, SQLiteConnection metaDatabaseConnection)
         {
             Dictionary<string, int> counts = new Dictionary<string, int>();
@@ -272,7 +272,6 @@ namespace Practicum1
             SQLiteCommand command = databaseConnection.CreateCommand();
             command.CommandText = strCommand;
             command.ExecuteNonQuery();
-
         }
 
         public void ParseWorkload()
