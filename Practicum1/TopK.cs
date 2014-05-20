@@ -5,13 +5,13 @@ namespace Practicum1
 {
     public static class TopK
     {
-        public static int[] Get(int[][] keys, Dictionary<int, decimal>[] values, int k)
+        public static long[] Get(long[][] keys, Dictionary<long, double>[] values, int k)
         {
-            List<KeyValuePair<int, decimal>> topK = new List<KeyValuePair<int, decimal>>();
-            Dictionary<int, decimal> buffer = new Dictionary<int, decimal>();
-            HashSet<int> done = new HashSet<int>();
-            decimal[] max = new decimal[values.Length];
-            decimal thresh;
+            List<KeyValuePair<long, double>> topK = new List<KeyValuePair<long, double>>();
+            Dictionary<long, double> buffer = new Dictionary<long, double>();
+            HashSet<long> done = new HashSet<long>();
+            double[] max = new double[values.Length];
+            double thresh;
             
             int pointer = 0;
             while (topK.Count < k && pointer < values[0].Count)
@@ -21,7 +21,7 @@ namespace Practicum1
                 {
                     if (!done.Contains(keys[i][pointer]))
                     {
-                        decimal x = 0;
+                        double x = 0;
                         for (int j = 0; j < values.Length; j++)
                             x += values[j][keys[i][pointer]];
                         buffer[keys[i][pointer]] = x;
@@ -32,8 +32,8 @@ namespace Practicum1
                     thresh += max[i];
                 }
 
-                Dictionary<int, decimal> newBuffer = new Dictionary<int, decimal>();
-                foreach (KeyValuePair<int, decimal> kvp in buffer)
+                Dictionary<long, double> newBuffer = new Dictionary<long, double>();
+                foreach (KeyValuePair<long, double> kvp in buffer)
                 {
                     if (kvp.Value >= thresh)
                         topK.Add(kvp);
@@ -47,7 +47,7 @@ namespace Practicum1
 
             topK.Sort((a, b) => { return -a.Value.CompareTo(b.Value); });
 
-            int[] result = new int[k];
+            long[] result = new long[k];
             for (int i = 0; i < k; i++)
                 result[i] = topK[i].Key;
 
