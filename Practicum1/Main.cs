@@ -52,11 +52,11 @@ namespace Practicum1
             command = new SQLiteCommand(sql, databaseConnection);
             command.ExecuteNonQuery();*/
 
-            string sql = "select * from autompg";
-            SQLiteCommand command = new SQLiteCommand(sql, databaseConnection);
-            SQLiteDataReader reader = command.ExecuteReader();
-            while (reader.Read())
-                label1.Text += "Model: " + reader["model"] + "\tBrand: " + reader["brand"] + '\n';
+          //  string sql = "select * from autompg";
+           // SQLiteCommand command = new SQLiteCommand(sql, databaseConnection);
+           // SQLiteDataReader reader = command.ExecuteReader();
+           // while (reader.Read())
+             //   label1.Text += "Model: " + reader["model"] + "\tBrand: " + reader["brand"] + '\n';
 
         }
 
@@ -106,81 +106,60 @@ namespace Practicum1
             int n = database.Count;
             ParseWorkload();
 
-            for (int t = 5; t < 50; t++)
+            Dictionary<string, int[]> intervals = new Dictionary<string, int[]> 
             {
-                decimal idf = CalculateIDFNumeric(database, "mpg", n, t);
-                sql = "insert into IDF (attribute, value, IDF) values ('mpg', "+t+", "+idf.ToString(CultureInfo.InvariantCulture)+")";
-                command = new SQLiteCommand(sql, metaDatabaseConnection);
-                command.ExecuteNonQuery();
-                // qf 
-                //TODO do something with qf
+                {"mpg", new int[]{5,50,1}},
+                {"cylinders", new int[]{1,20,1}},
+                {"displacement", new int[]{50,500,10}},
+                {"horsepower", new int[]{30,300,10}},
+                {"weight", new int[]{1000,10000,100}},
+                {"acceleration", new int[]{5,30,1}},
+                {"model_year", new int[]{60,99,1}}
+            };
+
+            List<Tuple<int, decimal>> rqf = new List<Tuple<int, decimal>>();
+            decimal max = 0;
+            new SQLiteCommand("begin", metaDatabaseConnection).ExecuteNonQuery();
+            foreach (KeyValuePair<string, int[]> kvp in intervals)
+            {
+                for (int t = kvp.Value[0]; t <kvp.Value[1]; t+=kvp.Value[2])
+                {
+                    decimal idf = CalculateIDFNumeric(database, kvp.Key, n, t);
+                    sql = "insert into IDF (attribute, value, IDF) values ('"+kvp.Key+"', " + t + ", " + idf.ToString(CultureInfo.InvariantCulture) + ")";
+                    command = new SQLiteCommand(sql, metaDatabaseConnection);
+                    command.ExecuteNonQuery();
+                    // qf                
+                    decimal qf = CalculateQFNumeric(kvp.Key, n, t);
+                    rqf.Add(new Tuple<int, decimal>(t, qf));
+                    if (qf > max)
+                        max = qf;
+                }
+                foreach (Tuple<int, decimal> t in rqf)
+                {
+                    decimal qf = max==0?0:t.Item2/max;
+                    sql = "insert into QF (attribute, value, QF) values ('"+kvp.Key+"', " + t.Item1 + ", " + qf.ToString(CultureInfo.InvariantCulture) + ")";
+                    command = new SQLiteCommand(sql, metaDatabaseConnection);
+                    command.ExecuteNonQuery();
+                }
+                rqf.Clear();
+                max = 0;
 
             }
-            //cylinders
-            for (int t = 1; t <= 20; t++)
-            {
-                decimal idf = CalculateIDFNumeric(database, "cylinders", n, t);
-                sql = "insert into IDF (attribute, value, IDF) values ('cylinders', " + t + ", " + idf.ToString(CultureInfo.InvariantCulture) + ")";
-                command = new SQLiteCommand(sql, metaDatabaseConnection);
-                command.ExecuteNonQuery();
-            }
-            // displacement
-            for (int t = 50; t <= 500; t+=10)
-            {
-                decimal idf = CalculateIDFNumeric(database, "displacement", n, t);
-                sql = "insert into IDF (attribute, value, IDF) values ('displacement', " + t + ", " + idf.ToString(CultureInfo.InvariantCulture) + ")";
-                command = new SQLiteCommand(sql, metaDatabaseConnection);
-                command.ExecuteNonQuery();
-            }
-            // horsepower
-            for (int t = 30; t <= 300; t+=10)
-            {
-                decimal idf = CalculateIDFNumeric(database, "horsepower", n, t);
-                sql = "insert into IDF (attribute, value, IDF) values ('horsepower', " + t + ", " + idf.ToString(CultureInfo.InvariantCulture) + ")";
-                command = new SQLiteCommand(sql, metaDatabaseConnection);
-                command.ExecuteNonQuery();
-            }
-            // weight
-            for (int t = 1000; t <= 10000; t += 100)
-            {
-                decimal idf = CalculateIDFNumeric(database, "weight", n, t);
-                sql = "insert into IDF (attribute, value, IDF) values ('weight', " + t + ", " + idf.ToString(CultureInfo.InvariantCulture) + ")";
-                command = new SQLiteCommand(sql, metaDatabaseConnection);
-                command.ExecuteNonQuery();
-            }
-            // acceleration
-            for (int t = 5; t <= 30; t++)
-            {
-                decimal idf = CalculateIDFNumeric(database, "acceleration", n, t);
-                sql = "insert into IDF (attribute, value, IDF) values ('acceleration', " + t + ", " + idf.ToString(CultureInfo.InvariantCulture) + ")";
-                command = new SQLiteCommand(sql, metaDatabaseConnection);
-                command.ExecuteNonQuery();
-            }
-            //model_year
-            for (int t = 60; t <= 99; t++)
-            {
-                decimal idf = CalculateIDFNumeric(database, "model_year", n, t);
-                sql = "insert into IDF (attribute, value, IDF) values ('model_year', " + t + ", " + idf.ToString(CultureInfo.InvariantCulture) + ")";
-                command = new SQLiteCommand(sql, metaDatabaseConnection);
-                command.ExecuteNonQuery();
-            }
+           
             // origin
             CalculateIDFCategoric(database, "origin", n, metaDatabaseConnection);
+            CalculateQFNumeric("origin", metaDatabaseConnection);
             // brand
             CalculateIDFCategoric(database, "brand", n, metaDatabaseConnection);
+            CalculateQFNumeric("brand", metaDatabaseConnection);
             // model
             CalculateIDFCategoric(database, "model", n, metaDatabaseConnection);
+            CalculateQFNumeric("model", metaDatabaseConnection);
             // type
             CalculateIDFCategoric(database, "type", n, metaDatabaseConnection);
+            CalculateQFNumeric("type", metaDatabaseConnection);
            
-            
-          
-            // calculation and insertion of QF values
-
-            
-
-
-
+         
             // Jaccard
             foreach (KeyValuePair<string, Dictionary<Tuple<string,string>,int>> kvp1 in workloadInCounts)
             {
@@ -196,6 +175,7 @@ namespace Practicum1
                     command.ExecuteNonQuery();
                 }
             }
+            new SQLiteCommand("end", metaDatabaseConnection).ExecuteNonQuery();
         }
 
         public decimal CalculateIDFNumeric(List<Dictionary<string, string>> database, string attribute, int n, int t)
@@ -213,7 +193,7 @@ namespace Practicum1
                 //calculate std.dev.
                 double average = values.Average();
                 double sum = values.Sum(d => (d - average) * (d - average));
-                double stdDev = Math.Sqrt((sum) / (n - 1));
+                double stdDev = Math.Sqrt((sum) / n);
                 // calculate h
                 double h = 1.06 * stdDev * Math.Pow(n, -0.2);
                 // calculate idf
@@ -224,25 +204,30 @@ namespace Practicum1
         
         public decimal CalculateQFNumeric(string attribute,int n, int t)
         {
-            double[] difference = new double[n];
-            double[] values = new double[n];
+            if (workloadCounts[attribute].Count == 0)
+                return 0;
+            Dictionary<string, double> difference = new Dictionary<string, double>();
+            Dictionary<string, double> values = new Dictionary<string, double>();
             int index = 0;
+            int totalCount=0;
             foreach (KeyValuePair<string,int> row in workloadCounts[attribute])
             {
+                double val = double.Parse(row.Key);
                 //double value = double.Parse(row[attribute]);
-                difference[index] = row.Value - t; // ti-t
-                values[index] = row.Value; // for calculation of h
+                totalCount+=row.Value;
+                difference[row.Key] = val - t; // ti-t
+                values[row.Key] = val; // for calculation of h
                 index++;
             }
             //calculate std.dev.
-            double average = values.Average();
-            double sum = values.Sum(d => (d - average) * (d - average));
-            double stdDev = Math.Sqrt((sum) / (n - 1));
+            double average = values.Sum(d=>d.Value*workloadCounts[attribute][d.Key])/totalCount;
+            double sum = values.Sum(d => (d.Value - average) * (d.Value - average) * workloadCounts[attribute][d.Key]);
+            double stdDev = Math.Sqrt(sum / totalCount);
             // calculate h
             double h = 1.06 * stdDev * Math.Pow(n, -0.2);
-            // calculate idf
+            // calculate qf
             //  double test1 = difference.Sum(d => Math.Pow(Math.E, (-0.5 * (d / h) * (d / h))));
-            double test = difference.Sum(d => Math.Pow(Math.E, (-0.5 * (d / h) * (d / h))));
+            double test = difference.Sum(d =>workloadCounts[attribute][d.Key]* Math.Pow(Math.E, (-0.5 * (d.Value / h) * (d.Value / h))));
             return (decimal)test;
         }
 
@@ -265,13 +250,29 @@ namespace Practicum1
             }
         }
 
+        public void CalculateQFNumeric(string attribute, SQLiteConnection metaDatabaseConnection)
+        {
+            decimal max= workloadCounts[attribute].Count == 0? 1:workloadCounts[attribute].Max(d => d.Value);
+
+            foreach (KeyValuePair<string, int> kvp in workloadCounts[attribute])
+            {
+                decimal qf = kvp.Value / max;
+                string sql = "insert into QF (attribute, value, QF) values ('" + attribute + "', '" + kvp.Key + "', " + qf.ToString(CultureInfo.InvariantCulture) + ")";
+                SQLiteCommand command = new SQLiteCommand(sql, metaDatabaseConnection);
+                command.ExecuteNonQuery();
+            }
+
+        }
+
         public void ParseTable(SQLiteConnection databaseConnection)
         {
+            new SQLiteCommand("begin", databaseConnection).ExecuteNonQuery();
             // read and parse autompg.sql
             string strCommand = File.ReadAllText("autompg.sql");
             SQLiteCommand command = databaseConnection.CreateCommand();
             command.CommandText = strCommand;
             command.ExecuteNonQuery();
+            new SQLiteCommand("end", databaseConnection).ExecuteNonQuery();
         }
 
         public void ParseWorkload()
@@ -330,10 +331,10 @@ namespace Practicum1
                             // also add it to the workloadcounts
                            // Tuple<string, string> t = new Tuple<string, string>(attribute, values[ii]);
 
-                            if (workloadCounts[attribute].ContainsKey(value))
-                                workloadCounts[attribute][value] += times;
+                            if (workloadCounts[attribute].ContainsKey(values[ii]))
+                                workloadCounts[attribute][values[ii]] += times;
                             else
-                                workloadCounts[attribute][value] = times;
+                                workloadCounts[attribute][values[ii]] = times;
                         }
                     }
                 }
