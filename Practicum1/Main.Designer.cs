@@ -59,9 +59,8 @@
             // inputTextBox
             // 
             this.inputTextBox.Location = new System.Drawing.Point(47, 278);
-            this.inputTextBox.Multiline = true;
             this.inputTextBox.Name = "inputTextBox";
-            this.inputTextBox.Size = new System.Drawing.Size(261, 83);
+            this.inputTextBox.Size = new System.Drawing.Size(261, 20);
             this.inputTextBox.TabIndex = 1;
             // 
             // goButton

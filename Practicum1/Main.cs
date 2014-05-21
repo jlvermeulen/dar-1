@@ -188,7 +188,7 @@ namespace Practicum1
                 {
                     int x1 = kvp1.Value[new Tuple<string, string>(kvp2.Key.Item1, kvp2.Key.Item1)];
                     int x2 = kvp1.Value[new Tuple<string, string>(kvp2.Key.Item2, kvp2.Key.Item2)];
-                    double jaccard = kvp2.Value / (x1 + x2 - kvp2.Value);
+                    double jaccard = (double)kvp2.Value / (x1 + x2 - kvp2.Value);
                     sql = "insert into Jaccard (attribute, value_t, value_q, Jaccard) values ('" + kvp1.Key + "', '" + kvp2.Key.Item1 + "', '" + kvp2.Key.Item2 + "'," + jaccard.ToString(CultureInfo.InvariantCulture) + ")";
                     if (kvp2.Key.Item1 != kvp2.Key.Item2)
                         sql += "; insert into Jaccard (attribute, value_t, value_q, Jaccard) values ('" + kvp1.Key + "', '" + kvp2.Key.Item2 + "', '" + kvp2.Key.Item1 + "'," + jaccard.ToString(CultureInfo.InvariantCulture) + ")";
@@ -240,9 +240,7 @@ namespace Practicum1
             }
 
             // calculate qf
-            //  double test1 = difference.Sum(d => Math.Pow(Math.E, (-0.5 * (d / h) * (d / h))));
-            double test = difference.Sum(d => workloadCounts[attribute][d.Key] * Math.Pow(Math.E, (-0.5 * (d.Value / h) * (d.Value / h))));
-            return test;
+            return difference.Sum(d => workloadCounts[attribute][d.Key] * Math.Pow(Math.E, (-0.5 * (d.Value / h) * (d.Value / h))));
         }
 
         public double CalculateQFBandwidth(string attribute)
@@ -400,15 +398,15 @@ namespace Practicum1
 
             foreach (KeyValuePair<string, string> kvp in query)
             {
-                string template = " AND value = {0}";
+                string template = "' AND value = {0}";
                 if(true)//check op categorisch
-                    template = " AND value = '{0}'"; // gebruiken
+                    template = "' AND value = '{0}'"; // gebruiken
                 if (kvp.Key == "k")
                 {
                     k = int.Parse(kvp.Value);
                     continue;
                 }
-                sql = "select IDF from IDF WHERE attribute = '"+kvp.Key+"' AND value = "+kvp.Value+"";
+                sql = "select IDF from IDF WHERE attribute = '"+kvp.Key+ string.Format(template,kvp.Value)+"";
                 command = new SQLiteCommand(sql, metaDatabaseConnection);
                 reader = command.ExecuteReader();
                 reader.Read();
@@ -416,13 +414,15 @@ namespace Practicum1
                 IDFs[kvp.Key] = (double)reader["IDF"];
 
 
-                sql = "select value from BandwidthIDF WHERE attribute = '" + string.Format(template,kvp.Key)  + "'";
+                sql = "select value from BandwidthIDF WHERE attribute = '" +kvp.Key + "'";
                 command = new SQLiteCommand(sql, metaDatabaseConnection);
                 reader = command.ExecuteReader();
-                reader.Read();
-                hIDFs[kvp.Key] = (double)reader["value"];
+                if (reader.Read())
+                    hIDFs[kvp.Key] = (double)reader["value"];
+                else
+                    hIDFs[kvp.Key] = -1;
 
-                sql = "select QF from QF WHERE attribute = '" + kvp.Key + "' AND value = " + kvp.Value + "";
+                sql = "select QF from QF WHERE attribute = '" + kvp.Key + string.Format(template, kvp.Value) + "";
                 command = new SQLiteCommand(sql, metaDatabaseConnection);
                 reader = command.ExecuteReader();
                 reader.Read();
@@ -445,23 +445,40 @@ namespace Practicum1
                         continue;
                     string value = string.Format(CultureInfo.InvariantCulture, "{0}", reader[kvp.Key]);
 
-                    double t = double.Parse(value);// kan niet bij categorisch
-                    double q = double.Parse(kvp.Value); // kan niet bij categorisch
-                    double h = hIDFs[kvp.Key];
-                    double idfScore = Math.Pow(Math.E, -0.5 * ((t-q)/h)*((t-q)/h)) * IDFs[kvp.Key]; // kan niet bij categorisch
+                    double t =-1, q=-1, h=-1, idfScore=-1;
+                    if (hIDFs[kvp.Key] == -1)
+                    { // categorisch
+                        idfScore = IDFs[kvp.Key];
+                    }
+                    else
+                    {
+                        //  niet  categorisch
+                        t = double.Parse(value);
+                        q = double.Parse(kvp.Value);
+                        h = hIDFs[kvp.Key];
+                        idfScore = Math.Pow(Math.E, -0.5 * ((t - q) / h) * ((t - q) / h)) * IDFs[kvp.Key];
 
+                      
+                    }
                     results[i++].Add(new Tuple<long, double>((long)reader["id"], idfScore));
-
-
+                    string getJaccardString;
                     // calculation of jaccards
-                    string getJaccardString = "select Jaccard from Jaccard WHERE attribute = '" + kvp.Key + "' AND value_q = " + q.ToString(CultureInfo.InvariantCulture) + " AND value_t = " + t.ToString(CultureInfo.InvariantCulture) + "";
+                     if (hIDFs[kvp.Key] == -1)
+                         getJaccardString = "select Jaccard from Jaccard WHERE attribute = '" + kvp.Key + "' AND value_q = '" + kvp.Value + "' AND value_t = '" + value + "'";
+                    else
+                     getJaccardString = "select Jaccard from Jaccard WHERE attribute = '" + kvp.Key + "' AND value_q = " + q.ToString(CultureInfo.InvariantCulture) + " AND value_t = " + t.ToString(CultureInfo.InvariantCulture) + "";
                     SQLiteCommand getJaccardCommand = new SQLiteCommand(getJaccardString, metaDatabaseConnection);
                     SQLiteDataReader jaccardReader = getJaccardCommand.ExecuteReader();
                     
-                    double jaccard=q==t?1:0;
+                    // sets default to 1 if the same, 0 if not
+                    double jaccard=value==kvp.Value?1:0;
                     if (jaccardReader.Read())
-                        jaccard = (double)reader["value"];
-
+                    {
+                        // if there is an enrty replace jaccard value with it
+                        jaccard = (double)jaccardReader["Jaccard"];
+                        // makes sure that if you search bmw you get bmw's first
+                        jaccard += kvp.Value == value ? 0.01 : 0;
+                    }
 
                     jaccard = jaccard * QFs[kvp.Key];
                     results[i++].Add(new Tuple<long, double>((long)reader["id"], jaccard));
