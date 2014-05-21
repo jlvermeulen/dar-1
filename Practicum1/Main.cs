@@ -425,8 +425,10 @@ namespace Practicum1
                 sql = "select QF from QF WHERE attribute = '" + kvp.Key + string.Format(template, kvp.Value) + "";
                 command = new SQLiteCommand(sql, metaDatabaseConnection);
                 reader = command.ExecuteReader();
-                reader.Read();
-                QFs[kvp.Key] = (double)reader["QF"];
+                if (reader.Read())
+                    QFs[kvp.Key] = (double)reader["QF"];
+                else
+                    QFs[kvp.Key] = 1;
             }
 
             List<Tuple<long, double>>[] results = new List<Tuple<long,double>>[(query.Count-1)*2];
