@@ -32,6 +32,7 @@
             this.inputTextBox = new System.Windows.Forms.TextBox();
             this.goButton = new System.Windows.Forms.Button();
             this.resultViewDataGrid = new System.Windows.Forms.DataGridView();
+            this.Score = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.mpg = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.cylinders = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.displacement = new System.Windows.Forms.DataGridViewTextBoxColumn();
@@ -58,16 +59,19 @@
             // 
             // inputTextBox
             // 
-            this.inputTextBox.Location = new System.Drawing.Point(47, 278);
+            this.inputTextBox.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.inputTextBox.Location = new System.Drawing.Point(47, 650);
             this.inputTextBox.Name = "inputTextBox";
-            this.inputTextBox.Size = new System.Drawing.Size(261, 20);
+            this.inputTextBox.Size = new System.Drawing.Size(1031, 20);
             this.inputTextBox.TabIndex = 1;
             // 
             // goButton
             // 
-            this.goButton.Location = new System.Drawing.Point(339, 278);
+            this.goButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.goButton.Location = new System.Drawing.Point(1084, 650);
             this.goButton.Name = "goButton";
-            this.goButton.Size = new System.Drawing.Size(130, 83);
+            this.goButton.Size = new System.Drawing.Size(168, 20);
             this.goButton.TabIndex = 2;
             this.goButton.Text = "GO!";
             this.goButton.UseVisualStyleBackColor = true;
@@ -77,8 +81,12 @@
             // 
             this.resultViewDataGrid.AllowUserToAddRows = false;
             this.resultViewDataGrid.AllowUserToDeleteRows = false;
+            this.resultViewDataGrid.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.resultViewDataGrid.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             this.resultViewDataGrid.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
+            this.Score,
             this.mpg,
             this.cylinders,
             this.displacement,
@@ -93,8 +101,14 @@
             this.resultViewDataGrid.Location = new System.Drawing.Point(47, 37);
             this.resultViewDataGrid.Name = "resultViewDataGrid";
             this.resultViewDataGrid.ReadOnly = true;
-            this.resultViewDataGrid.Size = new System.Drawing.Size(422, 150);
+            this.resultViewDataGrid.Size = new System.Drawing.Size(1186, 607);
             this.resultViewDataGrid.TabIndex = 3;
+            // 
+            // Score
+            // 
+            this.Score.HeaderText = "Score";
+            this.Score.Name = "Score";
+            this.Score.ReadOnly = true;
             // 
             // mpg
             // 
@@ -164,9 +178,10 @@
             // 
             // Main
             // 
+            this.AcceptButton = this.goButton;
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(558, 456);
+            this.ClientSize = new System.Drawing.Size(1264, 682);
             this.Controls.Add(this.resultViewDataGrid);
             this.Controls.Add(this.goButton);
             this.Controls.Add(this.inputTextBox);
@@ -186,6 +201,7 @@
         private System.Windows.Forms.TextBox inputTextBox;
         private System.Windows.Forms.Button goButton;
         private System.Windows.Forms.DataGridView resultViewDataGrid;
+        private System.Windows.Forms.DataGridViewTextBoxColumn Score;
         private System.Windows.Forms.DataGridViewTextBoxColumn mpg;
         private System.Windows.Forms.DataGridViewTextBoxColumn cylinders;
         private System.Windows.Forms.DataGridViewTextBoxColumn displacement;

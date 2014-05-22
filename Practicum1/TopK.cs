@@ -5,7 +5,7 @@ namespace Practicum1
 {
     public static class TopK
     {
-        public static long[] Get(long[][] keys, Dictionary<long, double>[] values, int k)
+        public static Tuple<long,double>[] Get(long[][] keys, Dictionary<long, double>[] values, int k)
         {
             List<KeyValuePair<long, double>> topK = new List<KeyValuePair<long, double>>();
             Dictionary<long, double> buffer = new Dictionary<long, double>();
@@ -47,9 +47,9 @@ namespace Practicum1
 
             topK.Sort((a, b) => { return -a.Value.CompareTo(b.Value); });
 
-            long[] result = new long[k];
+            Tuple<long,double>[] result = new Tuple<long,double>[k];
             for (int i = 0; i < k; i++)
-                result[i] = topK[i].Key;
+                result[i] = new Tuple<long, double>(topK[i].Key, topK[i].Value);
 
             return result;
         }

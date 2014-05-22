@@ -10,6 +10,8 @@ namespace Practicum1
 {
     public partial class Main : Form
     {
+        Dictionary<string, int[]> intervals;
+
         Dictionary<string, Dictionary<string, int>> workloadCounts;
         Dictionary<string, Dictionary<Tuple<string, string>, int>> workloadInCounts;
         string[] attributes = new string[] { "mpg", "cylinders", "displacement", "horsepower", "weight", "acceleration", "model_year", "origin", "brand", "model", "type" };
@@ -19,6 +21,7 @@ namespace Practicum1
 
         public Main()
         {
+            this.WindowState = FormWindowState.Maximized;
             InitializeComponent();
             workloadCounts = new Dictionary<string, Dictionary<string, int>>();
             workloadInCounts = new Dictionary<string, Dictionary<Tuple<string, string>, int>>();
@@ -38,28 +41,6 @@ namespace Practicum1
 
             // fill the meta database using the 2 databases and the workload file
             FillMetaDatabase();
-
-            // string sql = "create table highscores (name varchar(20), score int)";
-            // SQLiteCommand command = new SQLiteCommand(sql, databaseConnection);
-            // command.ExecuteNonQuery();
-
-
-            /* sql = "insert into highscores (name, score) values ('Me', 3000)";
-            / command = new SQLiteCommand(sql, databaseConnection);
-             command.ExecuteNonQuery();
-             sql = "insert into highscores (name, score) values ('Myself', 6000)";
-             command = new SQLiteCommand(sql, databaseConnection);
-             command.ExecuteNonQuery();
-             sql = "insert into highscores (name, score) values ('And I', 9001)";
-             command = new SQLiteCommand(sql, databaseConnection);
-             command.ExecuteNonQuery();*/
-
-            //  string sql = "select * from autompg";
-            // SQLiteCommand command = new SQLiteCommand(sql, databaseConnection);
-            // SQLiteDataReader reader = command.ExecuteReader();
-            // while (reader.Read())
-            //   label1.Text += "Model: " + reader["model"] + "\tBrand: " + reader["brand"] + '\n';
-
         }
 
         public SQLiteConnection CreateMetaDatabase()
@@ -118,7 +99,7 @@ namespace Practicum1
             int n = database.Count;
             ParseWorkload();
 
-            Dictionary<string, int[]> intervals = new Dictionary<string, int[]> 
+            intervals = new Dictionary<string, int[]> 
             {
                 {"mpg", new int[]{5,50,1}},
                 {"cylinders", new int[]{1,20,1}},
@@ -302,7 +283,7 @@ namespace Practicum1
         {
             new SQLiteCommand("begin", databaseConnection).ExecuteNonQuery();
             // read and parse autompg.sql
-            string strCommand = File.ReadAllText("autompg.sql");
+            string strCommand = File.ReadAllText("autompg.sql").ToLower();
             SQLiteCommand command = databaseConnection.CreateCommand();
             command.CommandText = strCommand;
             command.ExecuteNonQuery();
@@ -377,44 +358,90 @@ namespace Practicum1
 
         private void goButton_Click(object sender, EventArgs e)
         {
+            
+            Dictionary<string, string> query = new Dictionary<string,string>();
             resultViewDataGrid.Rows.Clear();
-            Dictionary<string, string> query = new Dictionary<string, string> { { "k", "10" } };
-            int k = 10;
-
-            string[] input = inputTextBox.Text.Split(',');
-            foreach (string s in input)
+            try
             {
-                string[] pair = s.Split('=');
-                query[pair[0].Trim()]= pair[1].Trim(" '".ToCharArray());
+
+                query = new Dictionary<string, string> { { "k", "10" } };
+
+                string[] input = inputTextBox.Text.ToLower().Split(',');
+                foreach (string s in input)
+                {
+                    string[] pair = s.Split('=');
+                    query[pair[0].Trim()] = pair[1].Trim(" '".ToCharArray());
+                }
+                if (query.Count == 1)
+                {
+                    MessageBox.Show("Please specify at least 1 query parameter.");
+                    return;
+                }
+
             }
+            catch (Exception)
+            {
+                MessageBox.Show("The query could not be processed due to incorrect syntax");
+                return;
+            }
+
+            NewMethod(query);
+            return;
+        }
+
+        private void NewMethod(Dictionary<string, string> query)
+        {
 
             Dictionary<string, double> IDFs = new Dictionary<string, double>();
             Dictionary<string, double> hIDFs = new Dictionary<string, double>();
             Dictionary<string, double> QFs = new Dictionary<string, double>();
+            Dictionary<string, double> hQFs = new Dictionary<string, double>();
 
             string sql;
             SQLiteCommand command;
             SQLiteDataReader reader;
+            string queryValue = "";
 
+            Dictionary<string, string> roundedQuery = new Dictionary<string, string>();
             foreach (KeyValuePair<string, string> kvp in query)
             {
                 string template = "' AND value = {0}";
-                if(true)//check op categorisch
+                if (true)//check op categorisch
                     template = "' AND value = '{0}'"; // gebruiken
                 if (kvp.Key == "k")
-                {
-                    k = int.Parse(kvp.Value);
                     continue;
+
+                queryValue = kvp.Value;
+
+                // rounding
+                if (intervals.ContainsKey(kvp.Key))
+                {
+                    double q = double.Parse(queryValue, CultureInfo.InvariantCulture);
+
+                    if (q < intervals[kvp.Key][0])
+                        q = intervals[kvp.Key][0];
+                    if (q > intervals[kvp.Key][1])
+                        q = intervals[kvp.Key][1];
+                    if (q % intervals[kvp.Key][2] != 0)
+                        if (q % intervals[kvp.Key][2] >= intervals[kvp.Key][2] / 2.0)
+                            q += intervals[kvp.Key][2] - (q % intervals[kvp.Key][2]);
+                        else
+                            q -= q % intervals[kvp.Key][2];
+                    queryValue = q.ToString(CultureInfo.InvariantCulture);
                 }
-                sql = "select IDF from IDF WHERE attribute = '"+kvp.Key+ string.Format(template,kvp.Value)+"";
+
+                roundedQuery[kvp.Key] = queryValue;
+
+
+                sql = "select IDF from IDF WHERE attribute = '" + kvp.Key + string.Format(template, queryValue) + "";
                 command = new SQLiteCommand(sql, metaDatabaseConnection);
                 reader = command.ExecuteReader();
                 reader.Read();
-                
+
                 IDFs[kvp.Key] = (double)reader["IDF"];
 
 
-                sql = "select value from BandwidthIDF WHERE attribute = '" +kvp.Key + "'";
+                sql = "select value from BandwidthIDF WHERE attribute = '" + kvp.Key + "'";
                 command = new SQLiteCommand(sql, metaDatabaseConnection);
                 reader = command.ExecuteReader();
                 if (reader.Read())
@@ -422,18 +449,26 @@ namespace Practicum1
                 else
                     hIDFs[kvp.Key] = -1;
 
-                sql = "select QF from QF WHERE attribute = '" + kvp.Key + string.Format(template, kvp.Value) + "";
+                sql = "select QF from QF WHERE attribute = '" + kvp.Key + string.Format(template, queryValue) + "";
                 command = new SQLiteCommand(sql, metaDatabaseConnection);
                 reader = command.ExecuteReader();
                 if (reader.Read())
                     QFs[kvp.Key] = (double)reader["QF"];
                 else
                     QFs[kvp.Key] = 1;
+
+                sql = "select value from BandwidthQF WHERE attribute = '" + kvp.Key + "'";
+                command = new SQLiteCommand(sql, metaDatabaseConnection);
+                reader = command.ExecuteReader();
+                if (reader.Read())
+                    hQFs[kvp.Key] = (double)reader["value"];
+                else
+                    hQFs[kvp.Key] = -1;
             }
 
-            List<Tuple<long, double>>[] results = new List<Tuple<long,double>>[(query.Count-1)*2];
-            for(int i=0; i<results.Length;i++)
-                results[i] = new List<Tuple<long,double>>();
+            List<Tuple<long, double>>[] results = new List<Tuple<long, double>>[(query.Count - 1) * 2];
+            for (int i = 0; i < results.Length; i++)
+                results[i] = new List<Tuple<long, double>>();
 
             sql = "select * from autompg";
             command = new SQLiteCommand(sql, databaseConnection);
@@ -441,13 +476,14 @@ namespace Practicum1
             while (reader.Read())
             {
                 int i = 0;
-                foreach (KeyValuePair<string, string> kvp in query)
+                foreach (KeyValuePair<string, string> kvp in roundedQuery)
                 {
                     if (kvp.Key == "k")
                         continue;
                     string value = string.Format(CultureInfo.InvariantCulture, "{0}", reader[kvp.Key]);
 
-                    double t =-1, q=-1, h=-1, idfScore=-1;
+                    double t = -1, q = -1, h = -1, idfScore = -1;
+                    // string querryValue = kvp.Value;
                     if (hIDFs[kvp.Key] == -1)
                     { // categorisch
                         idfScore = IDFs[kvp.Key];
@@ -455,25 +491,27 @@ namespace Practicum1
                     else
                     {
                         //  niet  categorisch
-                        t = double.Parse(value);
-                        q = double.Parse(kvp.Value);
+                        t = double.Parse(value, CultureInfo.InvariantCulture);
+                        q = double.Parse(kvp.Value, CultureInfo.InvariantCulture);
                         h = hIDFs[kvp.Key];
-                        idfScore = Math.Pow(Math.E, -0.5 * ((t - q) / h) * ((t - q) / h)) * IDFs[kvp.Key];
 
-                      
+                        idfScore = Math.Pow(Math.E, -0.5 * ((t - q) / h) * ((t - q) / h)) * IDFs[kvp.Key];
                     }
+
                     results[i++].Add(new Tuple<long, double>((long)reader["id"], idfScore));
+
+
                     string getJaccardString;
                     // calculation of jaccards
-                     if (hIDFs[kvp.Key] == -1)
-                         getJaccardString = "select Jaccard from Jaccard WHERE attribute = '" + kvp.Key + "' AND value_q = '" + kvp.Value + "' AND value_t = '" + value + "'";
+                    if (hIDFs[kvp.Key] == -1)
+                        getJaccardString = "select Jaccard from Jaccard WHERE attribute = '" + kvp.Key + "' AND value_q = '" + queryValue + "' AND value_t = '" + value + "'";
                     else
-                     getJaccardString = "select Jaccard from Jaccard WHERE attribute = '" + kvp.Key + "' AND value_q = " + q.ToString(CultureInfo.InvariantCulture) + " AND value_t = " + t.ToString(CultureInfo.InvariantCulture) + "";
+                        getJaccardString = "select Jaccard from Jaccard WHERE attribute = '" + kvp.Key + "' AND value_q = " + q.ToString(CultureInfo.InvariantCulture) + " AND value_t = " + t.ToString(CultureInfo.InvariantCulture) + "";
                     SQLiteCommand getJaccardCommand = new SQLiteCommand(getJaccardString, metaDatabaseConnection);
                     SQLiteDataReader jaccardReader = getJaccardCommand.ExecuteReader();
-                    
+
                     // sets default to 1 if the same, 0 if not
-                    double jaccard=value==kvp.Value?1:0;
+                    double jaccard = value == kvp.Value ? 1 : 0;
                     if (jaccardReader.Read())
                     {
                         // if there is an enrty replace jaccard value with it
@@ -481,10 +519,17 @@ namespace Practicum1
                         // makes sure that if you search bmw you get bmw's first
                         jaccard += kvp.Value == value ? 0.01 : 0;
                     }
-
-                    jaccard = jaccard * QFs[kvp.Key];
+                    if (intervals.ContainsKey(kvp.Key))
+                    {
+                        h = hQFs[kvp.Key];
+                        jaccard = Math.Pow(Math.E, -0.5 * ((t - q) / h) * ((t - q) / h)) * QFs[kvp.Key];
+                    }
+                    else
+                    {
+                        jaccard = jaccard * QFs[kvp.Key];
+                    }
                     results[i++].Add(new Tuple<long, double>((long)reader["id"], jaccard));
-                    
+
                 }
             }
 
@@ -504,19 +549,17 @@ namespace Practicum1
                 }
                 j++;
             }
-            long[] topK = TopK.Get(keys, values, k);
-
-
+            Tuple<long, double>[] topK = TopK.Get(keys, values, int.Parse(query["k"]));
             //get results from db + print on screen
-            foreach (long l in topK)
+            foreach (Tuple<long, double> ld in topK)
             {
-                sql = "select * from autompg where id = " + l;
+                sql = "select * from autompg where id = " + ld.Item1;
                 command = new SQLiteCommand(sql, databaseConnection);
                 reader = command.ExecuteReader();
                 reader.Read();
-                resultViewDataGrid.Rows.Add(reader["mpg"], reader["cylinders"], reader["displacement"], reader["horsepower"], reader["weight"], reader["acceleration"], reader["model_year"], reader["origin"], reader["brand"], reader["model"], reader["type"]);
+                resultViewDataGrid.Rows.Add(ld.Item2.ToString(CultureInfo.InvariantCulture), reader["mpg"], reader["cylinders"], reader["displacement"], reader["horsepower"], reader["weight"], reader["acceleration"], reader["model_year"], reader["origin"], reader["brand"], reader["model"], reader["type"]);
             }
-
+            resultViewDataGrid.AutoResizeColumns();
         }
 
     }
