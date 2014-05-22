@@ -80,7 +80,7 @@ namespace Practicum1
                     // string querryValue = kvp.Value;
                     if (hIDFs[kvp.Key] == -1)
                     { // categorisch
-                        idfScore = IDFs[kvp.Key];
+                        idfScore = kvp.Value == value ? IDFs[kvp.Key] : 0;
                     }
                     else
                     {
@@ -93,7 +93,6 @@ namespace Practicum1
                     }
 
                     results[i++].Add(new Tuple<long, double>((long)reader["id"], idfScore));
-
 
                     string getJaccardString;
                     // calculation of jaccards
@@ -110,8 +109,6 @@ namespace Practicum1
                     {
                         // if there is an enrty replace jaccard value with it
                         jaccard = (double)jaccardReader["Jaccard"];
-                        // makes sure that if you search bmw you get bmw's first
-                        jaccard += kvp.Value == value ? 0.01 : 0;
                     }
                     if (intervals.ContainsKey(kvp.Key))
                     {
