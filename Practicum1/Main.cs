@@ -384,34 +384,28 @@ namespace Practicum1
                 MessageBox.Show("The query could not be processed due to incorrect syntax");
                 return;
             }
+            Dictionary<string, double> IDFs = new Dictionary<string, double>(), hIDFs = new Dictionary<string, double>(),
+                QFs = new Dictionary<string, double>(), hQFs = new Dictionary<string, double>();
+            Dictionary<string, string> roundedQuery = RoundQuery(query);
 
-            NewMethod(query);
-            return;
+            ReadMetaData(IDFs, hIDFs, QFs, hQFs, roundedQuery);
+            List<Tuple<long,double>>[] scores = CalculateScores(IDFs, hIDFs, QFs, hQFs, roundedQuery);
+            Tuple<long, double>[] topKs = CalculateTopK(roundedQuery, scores);
+            PrintTopK(topKs);
         }
 
-        private void NewMethod(Dictionary<string, string> query)
+        private Dictionary<string, string> RoundQuery(Dictionary<string, string> query)
         {
-
-            Dictionary<string, double> IDFs = new Dictionary<string, double>();
-            Dictionary<string, double> hIDFs = new Dictionary<string, double>();
-            Dictionary<string, double> QFs = new Dictionary<string, double>();
-            Dictionary<string, double> hQFs = new Dictionary<string, double>();
-
-            string sql;
-            SQLiteCommand command;
-            SQLiteDataReader reader;
-            string queryValue = "";
-
             Dictionary<string, string> roundedQuery = new Dictionary<string, string>();
             foreach (KeyValuePair<string, string> kvp in query)
             {
-                string template = "' AND value = {0}";
-                if (true)//check op categorisch
-                    template = "' AND value = '{0}'"; // gebruiken
                 if (kvp.Key == "k")
+                {
+                    roundedQuery[kvp.Key] = kvp.Value;
                     continue;
+                }
 
-                queryValue = kvp.Value;
+                string queryValue = kvp.Value;
 
                 // rounding
                 if (intervals.ContainsKey(kvp.Key))
@@ -431,15 +425,30 @@ namespace Practicum1
                 }
 
                 roundedQuery[kvp.Key] = queryValue;
+            }
+            return roundedQuery;
+        }
 
+        private void ReadMetaData(Dictionary<string, double> IDFs, Dictionary<string, double> hIDFs, Dictionary<string, double> QFs, Dictionary<string, double> hQFs, Dictionary<string, string> roundedQuery)
+        {
+            string sql;
+            SQLiteCommand command;
+            SQLiteDataReader reader;
 
-                sql = "select IDF from IDF WHERE attribute = '" + kvp.Key + string.Format(template, queryValue) + "";
+            foreach (KeyValuePair<string, string> kvp in roundedQuery)
+            {
+                string template = "' AND value = {0}";
+                if (true)//check op categorisch
+                    template = "' AND value = '{0}'";
+                if (kvp.Key == "k")
+                    continue;
+
+                sql = "select IDF from IDF WHERE attribute = '" + kvp.Key + string.Format(template, kvp.Value) + "";
                 command = new SQLiteCommand(sql, metaDatabaseConnection);
                 reader = command.ExecuteReader();
                 reader.Read();
 
                 IDFs[kvp.Key] = (double)reader["IDF"];
-
 
                 sql = "select value from BandwidthIDF WHERE attribute = '" + kvp.Key + "'";
                 command = new SQLiteCommand(sql, metaDatabaseConnection);
@@ -449,7 +458,7 @@ namespace Practicum1
                 else
                     hIDFs[kvp.Key] = -1;
 
-                sql = "select QF from QF WHERE attribute = '" + kvp.Key + string.Format(template, queryValue) + "";
+                sql = "select QF from QF WHERE attribute = '" + kvp.Key + string.Format(template, kvp.Value) + "";
                 command = new SQLiteCommand(sql, metaDatabaseConnection);
                 reader = command.ExecuteReader();
                 if (reader.Read())
@@ -465,14 +474,18 @@ namespace Practicum1
                 else
                     hQFs[kvp.Key] = -1;
             }
+           
+        }
 
-            List<Tuple<long, double>>[] results = new List<Tuple<long, double>>[(query.Count - 1) * 2];
+        private List<Tuple<long,double>>[] CalculateScores(Dictionary<string, double> IDFs, Dictionary<string, double> hIDFs, Dictionary<string, double> QFs, Dictionary<string, double> hQFs, Dictionary<string, string> roundedQuery)
+        {
+            List<Tuple<long, double>>[] results = new List<Tuple<long, double>>[(roundedQuery.Count - 1) * 2];
             for (int i = 0; i < results.Length; i++)
                 results[i] = new List<Tuple<long, double>>();
 
-            sql = "select * from autompg";
-            command = new SQLiteCommand(sql, databaseConnection);
-            reader = command.ExecuteReader();
+            string sql = "select * from autompg";
+            SQLiteCommand command = new SQLiteCommand(sql, databaseConnection);
+            SQLiteDataReader reader = command.ExecuteReader();
             while (reader.Read())
             {
                 int i = 0;
@@ -504,7 +517,7 @@ namespace Practicum1
                     string getJaccardString;
                     // calculation of jaccards
                     if (hIDFs[kvp.Key] == -1)
-                        getJaccardString = "select Jaccard from Jaccard WHERE attribute = '" + kvp.Key + "' AND value_q = '" + queryValue + "' AND value_t = '" + value + "'";
+                        getJaccardString = "select Jaccard from Jaccard WHERE attribute = '" + kvp.Key + "' AND value_q = '" + kvp.Value + "' AND value_t = '" + value + "'";
                     else
                         getJaccardString = "select Jaccard from Jaccard WHERE attribute = '" + kvp.Key + "' AND value_q = " + q.ToString(CultureInfo.InvariantCulture) + " AND value_t = " + t.ToString(CultureInfo.InvariantCulture) + "";
                     SQLiteCommand getJaccardCommand = new SQLiteCommand(getJaccardString, metaDatabaseConnection);
@@ -529,9 +542,17 @@ namespace Practicum1
                         jaccard = jaccard * QFs[kvp.Key];
                     }
                     results[i++].Add(new Tuple<long, double>((long)reader["id"], jaccard));
-
                 }
             }
+            return results;
+            
+        }
+
+        Tuple<long, double>[] CalculateTopK(Dictionary<string, string> roundedQuery, List<Tuple<long, double>>[] results)
+        {
+            string sql;
+            SQLiteCommand command;
+            SQLiteDataReader reader;
 
             long[][] keys = new long[results.Length][];
             Dictionary<long, double>[] values = new Dictionary<long, double>[results.Length];
@@ -549,7 +570,14 @@ namespace Practicum1
                 }
                 j++;
             }
-            Tuple<long, double>[] topK = TopK.Get(keys, values, int.Parse(query["k"]));
+            return TopK.Get(keys, values, int.Parse(roundedQuery["k"]));
+        }
+
+        private void PrintTopK(Tuple<long, double>[] topK)
+        {
+            string sql;
+            SQLiteDataReader reader;
+            SQLiteCommand command;
             //get results from db + print on screen
             foreach (Tuple<long, double> ld in topK)
             {
@@ -561,6 +589,5 @@ namespace Practicum1
             }
             resultViewDataGrid.AutoResizeColumns();
         }
-
     }
 }
