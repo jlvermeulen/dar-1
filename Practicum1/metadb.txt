@@ -1,0 +1,5 @@
+create table IDF (attribute varchar(20), value varchar(20), IDF real, primary key(attribute, value))
+create table QF (attribute varchar(20), value varchar(20), QF real, primary key(attribute, value))
+create table Jaccard (attribute varchar(20), value_t varchar(20), value_q varchar(20), Jaccard real, primary key(attribute, value_t, value_q))
+create table BandwidthIDF (attribute varchar(20), value real, primary key(attribute))
+create table BandwidthQF (attribute varchar(20), value real, primary key(attribute))
