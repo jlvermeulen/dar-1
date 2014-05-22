@@ -47,8 +47,8 @@ namespace Practicum1
 
             topK.Sort((a, b) => { return -a.Value.CompareTo(b.Value); });
 
-            Tuple<long,double>[] result = new Tuple<long,double>[k];
-            for (int i = 0; i < k; i++)
+            Tuple<long,double>[] result = new Tuple<long,double>[topK.Count];
+            for (int i = 0; i < topK.Count; i++)
                 result[i] = new Tuple<long, double>(topK[i].Key, topK[i].Value);
 
             return result;
