@@ -118,16 +118,16 @@ namespace Practicum1
 
             // origin
             CalculateIDFCategoric(database, "origin", n, metaDatabaseConnection);
-            CalculateQFNumeric("origin", metaDatabaseConnection);
+            CalculateQFCategoric("origin", metaDatabaseConnection);
             // brand
             CalculateIDFCategoric(database, "brand", n, metaDatabaseConnection);
-            CalculateQFNumeric("brand", metaDatabaseConnection);
+            CalculateQFCategoric("brand", metaDatabaseConnection);
             // model
             CalculateIDFCategoric(database, "model", n, metaDatabaseConnection);
-            CalculateQFNumeric("model", metaDatabaseConnection);
+            CalculateQFCategoric("model", metaDatabaseConnection);
             // type
             CalculateIDFCategoric(database, "type", n, metaDatabaseConnection);
-            CalculateQFNumeric("type", metaDatabaseConnection);
+            CalculateQFCategoric("type", metaDatabaseConnection);
 
             // Jaccard
             foreach (KeyValuePair<string, Dictionary<Tuple<string, string>, int>> kvp1 in workloadInCounts)
@@ -239,7 +239,7 @@ namespace Practicum1
         }
 
         // calcualte an QF-value for a categorical attribute
-        public void CalculateQFNumeric(string attribute, SQLiteConnection metaDatabaseConnection)
+        public void CalculateQFCategoric(string attribute, SQLiteConnection metaDatabaseConnection)
         {
             double max = workloadCounts[attribute].Count == 0 ? 1 : workloadCounts[attribute].Max(d => d.Value);
 
