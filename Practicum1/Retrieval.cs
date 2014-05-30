@@ -54,7 +54,6 @@ namespace Practicum1
                 else
                     hQFs[kvp.Key] = -1;
             }
-
         }
 
         // Calculate the scores.
@@ -77,7 +76,6 @@ namespace Practicum1
                     string value = string.Format(CultureInfo.InvariantCulture, "{0}", reader[kvp.Key]);
 
                     double t = -1, q = -1, h = -1, idfScore = -1;
-                    // string querryValue = kvp.Value;
                     if (hIDFs[kvp.Key] == -1)
                     { // categorisch
                         idfScore = kvp.Value == value ? IDFs[kvp.Key] : 0;
@@ -100,25 +98,23 @@ namespace Practicum1
                         getJaccardString = "select Jaccard from Jaccard WHERE attribute = '" + kvp.Key + "' AND value_q = '" + kvp.Value + "' AND value_t = '" + value + "'";
                     else
                         getJaccardString = "select Jaccard from Jaccard WHERE attribute = '" + kvp.Key + "' AND value_q = " + q.ToString(CultureInfo.InvariantCulture) + " AND value_t = " + t.ToString(CultureInfo.InvariantCulture) + "";
+
                     SQLiteCommand getJaccardCommand = new SQLiteCommand(getJaccardString, metaDatabaseConnection);
                     SQLiteDataReader jaccardReader = getJaccardCommand.ExecuteReader();
 
                     // sets default to 1 if the same, 0 if not
                     double jaccard = value == kvp.Value ? 1 : 0;
                     if (jaccardReader.Read())
-                    {
-                        // if there is an enrty replace jaccard value with it
-                        jaccard = (double)jaccardReader["Jaccard"];
-                    }
+                        jaccard = (double)jaccardReader["Jaccard"]; // if there is an entry replace jaccard value with it
+
                     if (intervals.ContainsKey(kvp.Key))
                     {
                         h = hQFs[kvp.Key];
                         jaccard = Math.Pow(Math.E, -0.5 * ((t - q) / h) * ((t - q) / h)) * QFs[kvp.Key];
                     }
                     else
-                    {
                         jaccard = jaccard * QFs[kvp.Key];
-                    }
+
                     results[i++].Add(new Tuple<long, double>((long)reader["id"], jaccard));
                 }
             }
@@ -129,10 +125,6 @@ namespace Practicum1
         // Prepare input for topK algoritm + call topK.
         Tuple<long, double>[] CalculateTopK(Dictionary<string, string> roundedQuery, List<Tuple<long, double>>[] results)
         {
-            string sql;
-            SQLiteCommand command;
-            SQLiteDataReader reader;
-
             long[][] keys = new long[results.Length][];
             Dictionary<long, double>[] values = new Dictionary<long, double>[results.Length];
             int j = 0;
@@ -149,6 +141,7 @@ namespace Practicum1
                 }
                 j++;
             }
+
             return TopK.Get(keys, values, int.Parse(roundedQuery["k"]));
         }
     }

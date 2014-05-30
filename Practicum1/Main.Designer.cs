@@ -61,9 +61,9 @@
             // 
             this.inputTextBox.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.inputTextBox.Location = new System.Drawing.Point(47, 650);
+            this.inputTextBox.Location = new System.Drawing.Point(12, 650);
             this.inputTextBox.Name = "inputTextBox";
-            this.inputTextBox.Size = new System.Drawing.Size(1031, 20);
+            this.inputTextBox.Size = new System.Drawing.Size(1066, 20);
             this.inputTextBox.TabIndex = 1;
             // 
             // goButton
@@ -98,10 +98,11 @@
             this.brand,
             this.model,
             this.type});
-            this.resultViewDataGrid.Location = new System.Drawing.Point(47, 37);
+            this.resultViewDataGrid.Location = new System.Drawing.Point(12, 12);
             this.resultViewDataGrid.Name = "resultViewDataGrid";
             this.resultViewDataGrid.ReadOnly = true;
-            this.resultViewDataGrid.Size = new System.Drawing.Size(1186, 607);
+            this.resultViewDataGrid.RowHeadersWidth = 75;
+            this.resultViewDataGrid.Size = new System.Drawing.Size(1240, 632);
             this.resultViewDataGrid.TabIndex = 3;
             // 
             // Score
