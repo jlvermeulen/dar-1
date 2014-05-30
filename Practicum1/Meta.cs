@@ -158,8 +158,7 @@ namespace Practicum1
                 difference[index++] = double.Parse(row[attribute]) - t; // ti-t
 
             // calculate idf
-            double test = Math.Log10(n / difference.Sum(d => Math.Pow(Math.E, (-0.5 * (d / h) * (d / h)))));
-            return test;
+            return Math.Log10(n / difference.Sum(d => Math.Pow(Math.E, (-0.5 * (d / h) * (d / h)))));;
         }
 
         // Calculate the h value used for IDF calculation.
@@ -174,9 +173,9 @@ namespace Practicum1
             double average = values.Average();
             double sum = values.Sum(d => (d - average) * (d - average));
             double stdDev = Math.Sqrt(sum / n);
+
             // calculate h
-            double h = 1.06 * stdDev * Math.Pow(n, -0.2);
-            return h;
+            return 1.06 * stdDev * Math.Pow(n, -0.2);
         }
 
         // calcualte an QF-value for a numeric attribute
@@ -184,13 +183,10 @@ namespace Practicum1
         {
             if (workloadCounts[attribute].Count == 0)
                 return 0;
+
             Dictionary<string, double> difference = new Dictionary<string, double>();
-            int totalCount = 0;
             foreach (KeyValuePair<string, int> row in workloadCounts[attribute])
-            {
-                totalCount += row.Value;
                 difference[row.Key] = double.Parse(row.Key) - t; // ti-t
-            }
 
             // calculate qf
             return difference.Sum(d => workloadCounts[attribute][d.Key] * Math.Pow(Math.E, (-0.5 * (d.Value / h) * (d.Value / h))));
@@ -213,10 +209,9 @@ namespace Practicum1
             double average = values.Sum(d => d.Value * workloadCounts[attribute][d.Key]) / totalCount;
             double sum = values.Sum(d => (d.Value - average) * (d.Value - average) * workloadCounts[attribute][d.Key]);
             double stdDev = Math.Sqrt(sum / totalCount);
+            
             // calculate h
-            double h = 1.06 * stdDev * Math.Pow(totalCount, -0.2);
-
-            return h;
+            return 1.06 * stdDev * Math.Pow(totalCount, -0.2);
         }
 
         // calcualte an IDF-value for a categorical attribute
