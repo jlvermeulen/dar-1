@@ -139,9 +139,17 @@ namespace Practicum1
             }
             catch (Exception)
             {
-                MessageBox.Show("The query could not be processed due to incorrect syntax");
+                MessageBox.Show("The query could not be processed due to incorrect syntax.");
                 return;
             }
+
+            foreach(string key in query.Keys)
+                if (!attributes.Contains(key) && key != "k")
+                {
+                    MessageBox.Show("There is no attribute named '" + key + "'.");
+                    return;
+                }
+
             Dictionary<string, double> IDFs = new Dictionary<string, double>(), hIDFs = new Dictionary<string, double>(),
                 QFs = new Dictionary<string, double>(), hQFs = new Dictionary<string, double>();
             Dictionary<string, string> roundedQuery = RoundQuery(query);
