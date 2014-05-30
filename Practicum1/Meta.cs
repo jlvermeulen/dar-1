@@ -137,12 +137,13 @@ namespace Practicum1
                     int x1 = kvp1.Value[new Tuple<string, string>(kvp2.Key.Item1, kvp2.Key.Item1)];
                     int x2 = kvp1.Value[new Tuple<string, string>(kvp2.Key.Item2, kvp2.Key.Item2)];
                     double jaccard = (double)kvp2.Value / (x1 + x2 - kvp2.Value);
+
                     sql = "insert into Jaccard (attribute, value_t, value_q, Jaccard) values ('" + kvp1.Key + "', '" + kvp2.Key.Item1 + "', '" + kvp2.Key.Item2 + "'," + jaccard.ToString(CultureInfo.InvariantCulture) + ")";
                     if (kvp2.Key.Item1 != kvp2.Key.Item2)
                         sql += "; insert into Jaccard (attribute, value_t, value_q, Jaccard) values ('" + kvp1.Key + "', '" + kvp2.Key.Item2 + "', '" + kvp2.Key.Item1 + "'," + jaccard.ToString(CultureInfo.InvariantCulture) + ")";
+                    
                     command = new SQLiteCommand(sql, metaDatabaseConnection);
                     command.ExecuteNonQuery();
-
                 }
             }
             new SQLiteCommand("end", metaDatabaseConnection).ExecuteNonQuery();
@@ -250,7 +251,6 @@ namespace Practicum1
                 SQLiteCommand command = new SQLiteCommand(sql, metaDatabaseConnection);
                 command.ExecuteNonQuery();
             }
-
         }
     }
 }

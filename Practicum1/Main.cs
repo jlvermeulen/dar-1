@@ -58,10 +58,10 @@ namespace Practicum1
         // Parse and process the workload.
         public void ParseWorkload()
         {
-            int nQuerries, times;
+            int nQueries, times;
             StreamReader stream = new StreamReader("workload.txt");
             string s = stream.ReadLine();
-            nQuerries = int.Parse(s.Split(' ')[0]);
+            nQueries = int.Parse(s.Split(' ')[0]);
             s = stream.ReadLine();
             while ((s = stream.ReadLine()) != "")
             {
@@ -70,7 +70,6 @@ namespace Practicum1
                 string[] statements = where.Split(new string[] { "AND" }, StringSplitOptions.None);
                 for (int i = 0; i < statements.Length; i++)
                 {
-
                     if (!statements[i].Contains("IN"))
                     {
                         string[] ss = statements[i].Split('=');
@@ -87,24 +86,23 @@ namespace Practicum1
                         string[] ss = statements[i].Split(new string[] { "IN" }, StringSplitOptions.None);
                         string attribute = ss[0].Trim();
                         string value = ss[1].Trim("() ".ToCharArray());
+
                         string[] values = value.Split(',');
                         for (int x = 0; x < values.Length; x++)
                             values[x] = values[x].Trim("' ".ToCharArray());
                         Array.Sort(values);
+
                         for (int ii = 0; ii < values.Length; ii++)
                         {
                             for (int j = ii; j < values.Length; j++)
                             {
                                 Tuple<string, string> t1 = new Tuple<string, string>(values[ii], values[j]);
                                 if (workloadInCounts[attribute].ContainsKey(t1))
-                                {
                                     workloadInCounts[attribute][t1] += times;
-                                }
                                 else
-                                {
                                     workloadInCounts[attribute][t1] = times;
-                                }
                             }
+
                             // also add it to the workloadcounts
                             if (workloadCounts[attribute].ContainsKey(values[ii]))
                                 workloadCounts[attribute][values[ii]] += times;
@@ -131,6 +129,7 @@ namespace Practicum1
                     string[] pair = s.Split('=');
                     query[pair[0].Trim()] = pair[1].Trim(" '".ToCharArray());
                 }
+
                 if (query.Count == 1)
                 {
                     MessageBox.Show("Please specify at least 1 query parameter.");
@@ -139,9 +138,17 @@ namespace Practicum1
             }
             catch (Exception)
             {
-                MessageBox.Show("The query could not be processed due to incorrect syntax");
+                MessageBox.Show("The query could not be processed due to incorrect syntax.");
                 return;
             }
+
+            foreach(string key in query.Keys)
+                if (!attributes.Contains(key) && key != "k")
+                {
+                    MessageBox.Show("There is no attribute named '" + key + "'.");
+                    return;
+                }
+
             Dictionary<string, double> IDFs = new Dictionary<string, double>(), hIDFs = new Dictionary<string, double>(),
                 QFs = new Dictionary<string, double>(), hQFs = new Dictionary<string, double>();
             Dictionary<string, string> roundedQuery = RoundQuery(query);
@@ -173,13 +180,16 @@ namespace Practicum1
 
                     if (q < intervals[kvp.Key][0])
                         q = intervals[kvp.Key][0];
+
                     if (q > intervals[kvp.Key][1])
                         q = intervals[kvp.Key][1];
+
                     if (q % intervals[kvp.Key][2] != 0)
                         if (q % intervals[kvp.Key][2] >= intervals[kvp.Key][2] / 2.0)
                             q += intervals[kvp.Key][2] - (q % intervals[kvp.Key][2]);
                         else
                             q -= q % intervals[kvp.Key][2];
+
                     queryValue = q.ToString(CultureInfo.InvariantCulture);
                 }
                 roundedQuery[kvp.Key] = queryValue;
@@ -202,6 +212,11 @@ namespace Practicum1
                 reader.Read();
                 resultViewDataGrid.Rows.Add(ld.Item2.ToString(CultureInfo.InvariantCulture), reader["mpg"], reader["cylinders"], reader["displacement"], reader["horsepower"], reader["weight"], reader["acceleration"], reader["model_year"], reader["origin"], reader["brand"], reader["model"], reader["type"]);
             }
+
+            int index = 1;
+            foreach (DataGridViewRow row in resultViewDataGrid.Rows)
+                row.HeaderCell.Value = index++.ToString();
+
             resultViewDataGrid.AutoResizeColumns();
         }
     }
