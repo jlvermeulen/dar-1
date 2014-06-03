@@ -1,0 +1,11 @@
+brand = bmw						eerst vergelijkbare dingen
+brand = bmw, type = sedan				bmw weegt zwaarder dan sedan omdat bwm zeldzaam is
+k = 400, brand = bmw, type = hatchback			bmw weegt ook nog zwaarder dan hatchback maar het weegt wel meer dan sedan
+k = 400, brand = bmw, type = hatchback, mpg = 40	je kan wel een niet bmw bovenaan krijgen
+
+mpg = 50						het werkt ook op numeriek
+mpg = 25						naar boven en naar beneden
+
+k = 400, type = station wagon				sedan lijkt meer op station wagon dan pickup
+
+
